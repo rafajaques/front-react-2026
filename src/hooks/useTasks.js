@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { getErrorMessage } from "../services/api";
-import { listTasks } from "../services/tasks";
+import { createTask, listTasks, updateTask } from "../services/tasks";
 
 export function useTasks() {
     const [tasks, setTasks] = useState([]);
@@ -26,7 +26,7 @@ export function useTasks() {
                 setStatus('error');
             });
 
-            return () => controller.abort();
+        return () => controller.abort();
     }, [reloadKey]);
 
     const reload = () => {
@@ -40,6 +40,7 @@ export function useTasks() {
             await request();
             return true;
         } catch (error) {
+            console.error(error);
             setActionError(getErrorMessage(error));
             return false;
         }
@@ -52,5 +53,13 @@ export function useTasks() {
         });
     }
 
-    return { tasks, status, loadError, reload, actionError, clearActionError: () => setActionError(null), addTask };
+    const toggleTask = async (task) => {
+        run(async () => {
+            const updatedTask = await updateTask(task.id, { concluida: !task.concluida });
+            
+            setTasks(prevTasks => prevTasks.map(t => t.id === task.id ? updatedTask : t));
+        });
+    }
+
+    return { tasks, status, loadError, reload, actionError, clearActionError: () => setActionError(null), addTask, toggleTask };
 }
